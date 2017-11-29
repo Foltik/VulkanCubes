@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Engine.h"
+#include "Threads/Scheduler.h"
 
 int main() {
     Engine engine;

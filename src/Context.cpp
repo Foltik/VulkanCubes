@@ -4,9 +4,11 @@
 #include <fstream>
 #include <cstring>
 #include <set>
+#include <chrono>
 
 #include "Window.h"
 #include "Shader/Shader.h"
+#include "Threads/Scheduler.h"
 
 namespace {
     VkResult CreateDebugReportCallbackEXT(VkInstance instance,
@@ -88,32 +90,15 @@ Context::~Context() {
     vkDestroyInstance(m_instance, nullptr);
 }
 
-
 void Context::createInstance(bool debug) {
-    // Application info
-    VkApplicationInfo appInfo = {};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "OpenMiner";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "None";
-    appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
-
-    VkInstanceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledLayerCount = 0;
+    vk::ApplicationInfo appInfo("OpenMiner");
+    vk::InstanceInfo instanceInfo(appInfo);
 
     std::vector<const char*> extensions;
 
     // Debug validation layers
     if (debug) {
-        if (!supportsLayers(m_validationLayers))
-            throw std::runtime_error("Validation layer(s) not supported!");
-
-        createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
-        createInfo.ppEnabledLayerNames = m_validationLayers.data();
-
+        instanceInfo.setLayers(m_validationLayers);
         extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     }
 
@@ -123,13 +108,9 @@ void Context::createInstance(bool debug) {
     for (auto i = 0; i < glfwExtCount; i++)
         extensions.push_back(glfwExtensions[i]);
 
-    // Check extensions
-    if (!supportsExtensions(extensions))
-        throw std::runtime_error("Extension(s) not supported!");
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
+    instanceInfo.setExtensions(extensions);
 
-    if (vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS)
+    if (vkCreateInstance(&instanceInfo, nullptr, &m_instance) != VK_SUCCESS)
         throw std::runtime_error("Failed to create Vulkan Instance!");
 }
 

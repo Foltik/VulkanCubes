@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 
 #include "Frames/Frame.h"
+#include "Threads/Scheduler.h"
 #include "Context.h"
 #include "Window.h"
 
@@ -49,9 +50,8 @@ public:
     };
     Frame& getFrame();
 
-
-
 private:
+    Scheduler scheduler;
     Window window;
     Context context;
 

@@ -5,6 +5,8 @@
 #include <iostream>
 #include <cstring>
 
+#include "Threads/Scheduler.h"
+
 namespace {
     GLFWwindow* createWindow(const std::string& title, int width, int height) {
         glfwInit();
@@ -12,14 +14,11 @@ namespace {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         return glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     }
-
-
-
 }
 
-Engine::Engine() : window(800, 600, "OpenMiner"),
+Engine::Engine() : scheduler(),
+                   window(800, 600, "OpenMiner"),
                    context(window, g_debug) {
-
 }
 
 Engine::~Engine() {

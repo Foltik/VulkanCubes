@@ -6,6 +6,8 @@
 #include <vector>
 #include <map>
 
+#include "Vulkan/Instance.h"
+
 class Window;
 
 class Context {

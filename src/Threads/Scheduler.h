@@ -13,7 +13,7 @@
 
 #include "concurrentqueue.h"
 
-class ThreadPool {
+class Scheduler {
 private:
     class IJob {
     public:
@@ -47,20 +47,20 @@ public:
     };
 
 public:
-    ThreadPool() : ThreadPool{std::max(std::thread::hardware_concurrency(), 2u) - 1u} {}
-    explicit ThreadPool(const std::uint32_t numThreads) : m_done{false}, m_jobQueue{}, m_threads{} {
+    Scheduler() : Scheduler(std::max(std::thread::hardware_concurrency(), 2u) - 1u) {}
+    explicit Scheduler(const std::uint32_t numThreads) : m_numThreads(numThreads) {
         try {
             for (auto i = 0; i < numThreads; i++)
-                m_threads.emplace_back(&ThreadPool::worker, this);
+                m_threads.emplace_back(&Scheduler::worker, this);
         } catch (...) {
             cleanup();
             throw;
         }
     }
-    ~ThreadPool() { cleanup(); }
+    ~Scheduler() { cleanup(); }
 
-    ThreadPool(const ThreadPool& rhs) = delete;
-    ThreadPool& operator=(const ThreadPool& rhs) = delete;
+    Scheduler(const Scheduler& rhs) = delete;
+    Scheduler& operator=(const Scheduler& rhs) = delete;
 
     template<typename Func, typename... Args>
     auto run(Func&& func, Args&& ... args) {
@@ -74,13 +74,35 @@ public:
         return result;
     }
 
+    template <typename Func>
+    auto runRange(Func&& func, int start, int end) {
+        std::vector<Scheduler::Future<void>> futures;
+
+        int blockSize = (end - start) / m_numThreads;
+        int remainder = (end - start) % m_numThreads;
+
+        for (int i = 0; i < m_numThreads; i++) {
+            futures.push_back(run([=]() {
+                for (int j = start + (i * blockSize); j < start + ((i + 1) * blockSize); j++) {
+                    func(j);
+                }
+            }));
+        }
+
+        for (int i = end - remainder; i < end; i++) {
+            futures.push_back(run(std::forward<Func>(func), i));
+        }
+
+        return futures;
+    };
+
     inline void sync() {
         while (m_activeJobs != 0);
     }
 
 private:
     void worker() {
-        while (!m_done) {
+        while (m_running) {
             std::unique_ptr<IJob> job;
             if (m_jobQueue.try_dequeue(job)) {
                 m_activeJobs++;
@@ -91,31 +113,16 @@ private:
     }
 
     void cleanup() {
-        m_done = true;
+        m_running = false;
         for (auto& thread : m_threads)
             if (thread.joinable())
                 thread.join();
     }
 
 private:
-    std::atomic_bool m_done;
-    std::atomic_int m_activeJobs;
+    int m_numThreads;
+    std::atomic_bool m_running = true;
+    std::atomic_int m_activeJobs = 0;
     moodycamel::ConcurrentQueue<std::unique_ptr<IJob>> m_jobQueue;
-    std::vector<std::thread> m_threads;
+    std::vector<std::thread> m_threads{};
 };
-
-namespace Threads {
-    inline ThreadPool& getThreadPool() {
-        static ThreadPool pool;
-        return pool;
-    }
-
-    template<typename Func, typename... Args>
-    inline auto run(Func&& func, Args&& ... args) {
-        return getThreadPool().run(std::forward<Func>(func), std::forward<Args>(args)...);
-    }
-
-    void sync() {
-        getThreadPool().sync();
-    }
-}
