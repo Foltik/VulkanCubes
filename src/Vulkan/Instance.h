@@ -81,8 +81,9 @@ namespace vk {
             vkDestroyInstance(m_instance, nullptr);
         }
 
-        khr::Surface createSurface(GLFWwindow* window) {
-            return khr::Surface(*this, window);
+        khr::Surface& createSurface(GLFWwindow* window) {
+            khr::Surface surface(*this, window);
+            return surface;
         }
 
         const VkInstance vkInstance() const {
