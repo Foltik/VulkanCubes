@@ -8,6 +8,7 @@
 #include "Util.h"
 #include "VkTraits.h"
 #include "Structure.h"
+#include "Surface.h"
 
 namespace vk {
     class ApplicationInfo : public VkTraits<ApplicationInfo, VkApplicationInfo> {
@@ -74,10 +75,18 @@ namespace vk {
         explicit Instance(const InstanceInfo& instanceInfo) {
             if (vkCreateInstance(&instanceInfo, nullptr, &m_instance) != VK_SUCCESS)
                 throw std::runtime_error("Failed to create instance!");
-        };
+        }
 
         ~Instance() {
             vkDestroyInstance(m_instance, nullptr);
+        }
+
+        khr::Surface createSurface(GLFWwindow* window) {
+            return khr::Surface(*this, window);
+        }
+
+        const VkInstance vkInstance() const {
+            return m_instance;
         }
     };
 

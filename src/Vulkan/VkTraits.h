@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vulkan/vulkan.h>
+
 template <typename Type, typename VkType>
 struct VkTraits {
     constexpr VkTraits() = default;
