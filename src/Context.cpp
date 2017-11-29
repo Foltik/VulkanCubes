@@ -94,9 +94,8 @@ void Context::createInstance(bool debug) {
     vk::ApplicationInfo appInfo("OpenMiner");
     vk::InstanceInfo instanceInfo(appInfo);
 
-    std::vector<const char*> extensions;
-
     // Debug validation layers
+    std::vector<const char*> extensions;
     if (debug) {
         instanceInfo.setLayers(m_validationLayers);
         extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
@@ -107,7 +106,6 @@ void Context::createInstance(bool debug) {
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtCount);
     for (auto i = 0; i < glfwExtCount; i++)
         extensions.push_back(glfwExtensions[i]);
-
     instanceInfo.setExtensions(extensions);
 
     if (vkCreateInstance(&instanceInfo, nullptr, &m_instance) != VK_SUCCESS)

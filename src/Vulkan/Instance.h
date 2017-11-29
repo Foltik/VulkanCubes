@@ -1,8 +1,11 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 #include <vector>
+#include <stdexcept>
 
+#include "Util.h"
 #include "VkTraits.h"
 #include "Structure.h"
 
@@ -41,21 +44,41 @@ namespace vk {
         constexpr explicit InstanceInfo(const ApplicationInfo& appInfo)
             : pApplicationInfo(&appInfo) {}
 
-        void setLayers(const std::vector<const char*>& layers);
-        void setExtensions(const std::vector<const char*>& extensions);
+        void setLayers(const std::vector<const char*>& layers) {
+            // Verify all layers are supported
+            auto it = util::compareProps<VkLayerProperties>(layers, util::getSupportedLayers());
+            if (it != layers.end())
+                throw std::runtime_error("Layer " + std::string(*it) + " not found.");
+
+            enabledLayerCount = static_cast<uint32_t>(layers.size());
+            ppEnabledLayerNames = layers.data();
+        };
+
+        void setExtensions(const std::vector<const char*>& extensions) {
+            // Verify all extensions are supported
+            auto it = util::compareProps<VkExtensionProperties>(extensions, util::getSupportedExtensions());
+            if (it != extensions.end())
+                throw std::runtime_error("Extension " + std::string(*it) + " not found.");
+
+            enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+            ppEnabledExtensionNames = extensions.data();
+        }
     };
 
 
     class Instance : public VkTraits<Instance, VkInstanceCreateInfo> {
     private:
-        VkInstance m_instance;
+        VkInstance m_instance = {};
 
     public:
-        explicit Instance(const InstanceInfo& instanceInfo);
-        ~Instance();
+        explicit Instance(const InstanceInfo& instanceInfo) {
+            if (vkCreateInstance(&instanceInfo, nullptr, &m_instance) != VK_SUCCESS)
+                throw std::runtime_error("Failed to create instance!");
+        };
 
-        static std::vector<VkExtensionProperties> getSupportedExtensions();
-        static std::vector<VkLayerProperties> getSupportedLayers();
+        ~Instance() {
+            vkDestroyInstance(m_instance, nullptr);
+        }
     };
 
 }
