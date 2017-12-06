@@ -2,11 +2,13 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 #include <vector>
 #include <map>
 
 #include "Vulkan/Instance.h"
+#include "Vulkan/Surface.h"
 
 class Window;
 
@@ -14,8 +16,6 @@ class Context {
 public:
     explicit Context(Window& window, bool debug);
     ~Context();
-
-    void render();
 
 private:
     void init(Window& window, bool debug);
@@ -28,10 +28,15 @@ private:
     void createSwapChain(Window& window);
     void createImageViews();
     void createRenderPass();
+    void createDescriptorSetLayout();
     void createPipeline();
     void createFramebuffers();
     void createCommandPool();
-    void createCommandBuffers();
+    void createVertexBuffer();
+    void createIndexBuffer();
+    void createUniformBuffer();
+    void createDescriptorPool();
+    void createDescriptorSet();
     void createSemaphores();
 
     static std::vector<VkLayerProperties> getSupportedLayers();
@@ -65,6 +70,10 @@ private:
     VkPresentModeKHR selectSwapChainPresentMode(const std::vector<VkPresentModeKHR>& modes);
     VkExtent2D selectSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Window& window);
 
+    uint32_t findMemType(uint32_t filter, VkMemoryPropertyFlags flags);
+
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags flags, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugReportFlagsEXT flags,
@@ -80,13 +89,24 @@ private:
         "VK_LAYER_LUNARG_standard_validation"
     };
 
-    const std::vector<const char*> m_deviceExtensions = {
+    std::vector<const char*> m_deviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
+public:
+    int m_numInds;
+
+    struct MVP {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
     };
 
     VkDebugReportCallbackEXT m_debugReportCallback;
     VkSurfaceKHR m_surface;
+    vk::khr::Surface m_vsurface;
 
+    vk::Instance m_vinstance;
     VkInstance m_instance;
     VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
     VkDevice m_device;
@@ -98,18 +118,34 @@ private:
     VkFormat m_swapChainFormat;
     VkExtent2D m_swapChainExtent;
 
+    VkDescriptorSetLayout m_descriptorSetLayout;
     VkPipeline m_grahicsPipeline;
     VkPipelineLayout m_pipelineLayout;
     VkRenderPass m_renderPass;
 
     VkCommandPool m_commandPool;
-    std::vector<VkCommandBuffer> m_commandBuffers;
 
     VkSemaphore m_imageAvailable;
     VkSemaphore m_renderFinished;
 
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
+
+    static constexpr uint32_t m_vertexSize = 10240;
+    VkBuffer m_vertexBuffer;
+    VkDeviceMemory m_vertexBufferMem;
+    void* m_vertexBufferMappedMem;
+
+    static constexpr uint32_t m_indexSize = 10240;
+    VkBuffer m_indexBuffer;
+    VkDeviceMemory m_indexBufferMem;
+    void* m_indexBufferMappedMem;
+
+    VkBuffer m_uniformBuffer;
+    VkDeviceMemory m_uniformBufferMem;
+
+    VkDescriptorPool m_descriptorPool;
+    VkDescriptorSet m_descriptorSet;
 };
 
 

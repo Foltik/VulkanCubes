@@ -50,9 +50,11 @@ public:
     };
     Frame& getFrame();
 
+    Window& window();
+
 private:
     Scheduler scheduler;
-    Window window;
+    Window m_window;
     Context context;
 
     std::vector<std::unique_ptr<Frame>> m_frames;

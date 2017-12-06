@@ -17,18 +17,21 @@ namespace {
 }
 
 Engine::Engine() : scheduler(),
-                   window(800, 600, "OpenMiner"),
-                   context(window, g_debug) {
+                   m_window(800, 600, "OpenMiner"),
+                   context(m_window, g_debug) {
 }
 
 Engine::~Engine() {
 }
 
 void Engine::launch() {
-    while (!glfwWindowShouldClose(window.window())) {
+    while (!glfwWindowShouldClose(m_window.window())) {
         glfwPollEvents();
-        context.render();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        if (!m_frames.empty()) {
+            getFrame().update(0, context);
+            getFrame().render(context);
+        }
     }
 }
 
@@ -41,5 +44,9 @@ void Engine::popFrame() {
 
 Frame& Engine::getFrame() {
     return *m_frames.back();
+}
+
+Window& Engine::window() {
+    return m_window;
 }
 

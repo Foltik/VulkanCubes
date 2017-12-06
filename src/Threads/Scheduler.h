@@ -102,6 +102,7 @@ public:
 
 private:
     void worker() {
+        return;
         while (m_running) {
             std::unique_ptr<IJob> job;
             if (m_jobQueue.try_dequeue(job)) {
@@ -109,6 +110,7 @@ private:
                 job->execute();
                 m_activeJobs--;
             }
+            //std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
