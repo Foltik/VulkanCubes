@@ -17,5 +17,5 @@ namespace vk::khr {
         Surface(vk::Instance& instance, GLFWwindow* window);
 
         VkSurfaceKHR vkSurfaceKHR() const;
-    };
+	};
 }

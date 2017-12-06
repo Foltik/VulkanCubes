@@ -68,7 +68,7 @@ namespace vk {
         khr::Surface createSurface(GLFWwindow* window);
 
         VkInstance vkInstance() const;
-    };
+	};
 
 }
 
